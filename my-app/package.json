@@ -1,5 +1,5 @@
 {
-  "name": "serverless-demo",
+  "name": "my-app",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -10,15 +10,9 @@
     "@types/node": "^16.11.65",
     "@types/react": "^18.0.21",
     "@types/react-dom": "^18.0.6",
-    "aws-cdk-lib": "2.45.0",
-    "axios": "^1.1.2",
-    "classnames": "^2.3.2",
-    "constructs": "^10.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-quill": "^2.0.0",
     "react-scripts": "5.0.1",
-    "source-map-support": "^0.5.21",
     "typescript": "^4.8.4",
     "web-vitals": "^2.1.4"
   },
@@ -26,9 +20,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "watch": "tsc -w",
-    "cdk": "cdk"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
@@ -47,21 +39,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "bin": {
-    "serverless-demo": "bin/serverless-demo.js"
-  },
-  "devDependencies": {
-    "@types/jest": "^27.5.2",
-    "@types/node": "10.17.27",
-    "@types/prettier": "2.6.0",
-    "autoprefixer": "^10.4.12",
-    "aws-cdk": "2.45.0",
-    "jest": "^27.5.1",
-    "postcss": "^8.4.17",
-    "tailwindcss": "^3.1.8",
-    "ts-jest": "^27.1.4",
-    "ts-node": "^10.9.1",
-    "typescript": "~3.9.7"
   }
 }

@@ -12,5 +12,7 @@ export class ServerlessDemoStack extends cdk.Stack {
     // const queue = new sqs.Queue(this, 'ServerlessDemoQueue', {
     //   visibilityTimeout: cdk.Duration.seconds(300)
     // });
+
+
   }
 }
