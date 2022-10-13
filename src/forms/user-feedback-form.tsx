@@ -28,23 +28,25 @@ export default function UserFeedbackForm({destinationURL}: Props) {
         setFormError(false);
 
         let failedValidation = false;
-        if (name.length > 3) {
-            setErrors(prevState => ({
-                ...prevState,
+        let newErrorState = {...defaultErrorState}
+        if (name.length < 3) {
+            newErrorState = {
+                ...newErrorState,
                 name: 'expected name to be greater than 3 characters'
-            }))
+            }
             failedValidation = true;
         }
 
-        if (email.length > 3) {
-            setErrors(prevState => ({
-                ...prevState,
+        if (email.length < 3) {
+            newErrorState = {
+                ...newErrorState,
                 email: "invalid email address"
-            }))
+            }
             failedValidation = true;
         }
 
         if (failedValidation) {
+            setErrors(newErrorState)
             return
         }
 
@@ -72,10 +74,16 @@ export default function UserFeedbackForm({destinationURL}: Props) {
                 value={name}
                 onChange={setName}
                 label={'Name'}
-                error={errors.name != ""}
+                error={errors.name !== ""}
                 message={errors.name}
             />
-            <InputField value={email} onChange={setEmail} label={'Email'}/>
+            <InputField
+                value={email}
+                onChange={setEmail}
+                label={'Email'}
+                error={errors.email !== ""}
+                message={errors.email}
+            />
             <TextArea value={feedback} onChange={setFeedback}/>
             {
                 message && <div className={classNames({
