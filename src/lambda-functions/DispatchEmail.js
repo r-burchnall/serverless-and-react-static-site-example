@@ -26,7 +26,7 @@ exports.main = async function (event, context) {
 
                 const result = await sendEmail('feedback received', JSON.stringify({
                     email, name, feedback
-                }), 'ross.burchnall@and.digital')
+                }), process.env.EMAIL_ADDRESS)
 
                 return {
                     statusCode: 200,
@@ -78,7 +78,7 @@ async function sendEmail(subject, message, recipient) {
         Destination: {
             ToAddresses: [recipient.trim()],
         },
-        Source: 'ross.burchnall@and.digital',
+        Source: process.env.EMAIL_ADDRESS,
     }
     return SESClient
         .send(command)

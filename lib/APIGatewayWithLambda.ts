@@ -4,28 +4,30 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import {Function} from "aws-cdk-lib/aws-lambda";
 import {LambdaIntegration, RestApi} from "aws-cdk-lib/aws-apigateway";
 
-type Env = "uat" | "staging" | "production"
-
 interface Props {
     path: string
     handler: string
     restApiName:string,
     description: string,
     method: string
+    envVars: Record<string, string>
 }
 
-export class DispatchEmailLambda extends Construct {
+export class APIGatewayWithLambda extends Construct {
     public handler: Function;
     public api: RestApi;
     public lambdaIntegration: LambdaIntegration;
 
-    constructor(scope: Construct, id: string, {path, handler, restApiName, method, description}: Props) {
+    constructor(scope: Construct, id: string, {path, handler, restApiName, method, description, envVars}: Props) {
         super(scope, id);
 
         this.handler = new lambda.Function(this, `${id}-lambda`, {
             runtime: lambda.Runtime.NODEJS_14_X, // So we can use async in widget.js
             code: lambda.Code.fromAsset(path),
             handler: handler,
+            environment: {
+                ...envVars
+            }
         });
 
         this.api = new apigateway.RestApi(this, `${id}-api`, {
