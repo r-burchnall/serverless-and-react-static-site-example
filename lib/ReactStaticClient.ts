@@ -9,8 +9,10 @@ import {
     RemovalPolicy
 } from "aws-cdk-lib";
 import * as path from "path";
-import {HostedZone} from "aws-cdk-lib/aws-route53";
+import {CnameRecord, HostedZone} from "aws-cdk-lib/aws-route53";
 import {Certificate} from "aws-cdk-lib/aws-certificatemanager/lib/certificate";
+import {Bucket} from "aws-cdk-lib/aws-s3";
+import {Distribution} from "aws-cdk-lib/aws-cloudfront";
 
 type Env = "uat" | "staging" | "production"
 
@@ -21,6 +23,10 @@ type Props = {
 }
 
 export class ReactStaticClient extends Construct {
+    public hostingBucket: Bucket;
+    public distribution: Distribution;
+    public cname: CnameRecord;
+
     constructor(scope: Construct, id: string, {env, hostedZone, cert}: Props) {
         super(scope, id);
 
@@ -36,9 +42,9 @@ export class ReactStaticClient extends Construct {
             production: 'www.' + hostedZone.zoneName,
         }
 
-        const hostingBucket = new aws_s3.Bucket(
+        this.hostingBucket = new aws_s3.Bucket(
             this,
-            `ross-feedback-form-${env}-client-bucket`,
+            `${id}-client-bucket`,
             {
                 bucketName: bucketNameMap[env],
                 publicReadAccess: true,
@@ -66,9 +72,9 @@ export class ReactStaticClient extends Construct {
 
         policies.bucket.allAccess = new aws_iam.ManagedPolicy(
             this,
-            `ross-feedback-form-${env}-client-write-policy`,
+            `${id}-client-write-policy`,
             {
-                managedPolicyName: `ross-feedback-form-${env}-client-bucket-all-access`,
+                managedPolicyName: `${id}-client-bucket-all-access`,
                 document: aws_iam.PolicyDocument.fromJson({
                     Version: '2012-10-17',
                     Statement: [
@@ -76,13 +82,13 @@ export class ReactStaticClient extends Construct {
                             Sid: 'ListObjectsInBucket',
                             Effect: 'Allow',
                             Action: ['s3:ListBucket'],
-                            Resource: [hostingBucket.bucketArn],
+                            Resource: [this.hostingBucket.bucketArn],
                         },
                         {
                             Sid: 'AllObjectActions',
                             Effect: 'Allow',
                             Action: 's3:*Object*',
-                            Resource: [hostingBucket.bucketArn],
+                            Resource: [this.hostingBucket.bucketArn],
                         },
                     ],
                 }),
@@ -91,14 +97,14 @@ export class ReactStaticClient extends Construct {
 
         const dir = path.join(__dirname, '../build')
         console.log('The target dir is', dir)
-        new aws_s3_deployment.BucketDeployment(this, `ross-feedback-form-${env}-website`, {
+        new aws_s3_deployment.BucketDeployment(this, `${id}-website`, {
             sources: [
                 aws_s3_deployment.Source.asset(dir, {
-                    assetHash: 'ross-feedback-form-client-' + new Date().toISOString(),
+                    assetHash: `${id}-` + new Date().toISOString(),
                     assetHashType: AssetHashType.CUSTOM,
                 }),
             ],
-            destinationBucket: hostingBucket,
+            destinationBucket: this.hostingBucket,
         })
 
         const domainMap: Record<string, string> = {
@@ -108,12 +114,12 @@ export class ReactStaticClient extends Construct {
         }
 
         // Create Distribution with cert, default object, custom error response
-        const distribution = new aws_cloudfront.Distribution(
+        this.distribution = new aws_cloudfront.Distribution(
             this,
-            `ross-feedback-form-${env}-cf-distribution`,
+            `${id}-cf-distribution`,
             {
                 defaultBehavior: {
-                    origin: new aws_cloudfront_origins.S3Origin(hostingBucket),
+                    origin: new aws_cloudfront_origins.S3Origin(this.hostingBucket),
                     cachePolicy: aws_cloudfront.CachePolicy.CACHING_DISABLED,
                 },
                 defaultRootObject: 'index.html',
@@ -128,24 +134,14 @@ export class ReactStaticClient extends Construct {
             `Attempting to use the domain name of ${domainMap[env]} as cname for client`,
         )
 
-        new aws_route53.CnameRecord(this, 'client-cname', {
+        this.cname = new aws_route53.CnameRecord(this, `${id}-cname`, {
             recordName: domainMap[env],
-            domainName: distribution.distributionDomainName,
+            domainName: this.distribution.distributionDomainName,
             zone: hostedZone,
         })
 
-        const adminsGroup = new aws_iam.Group(this, `ross-feedback-form-${env}-client-admins`, {
-            groupName: `ross-feedback-form-${env}-client-admins`,
-            managedPolicies: [policies.bucket.allAccess],
-        })
-
-        new CfnOutput(this, `ross-feedback-form-${env}-client-admins-output`, {
-            exportName: `ross-feedback-form-${env}-client-admins-arn`,
-            value: adminsGroup.groupArn,
-        })
-
-        new CfnOutput(this, `ross-feedback-form-${env}-client-bucket-all-access-policy-output`, {
-            exportName: `ross-feedback-form-${env}-client-bucket-all-access-policy-arn`,
+        new CfnOutput(this, `${id}-client-bucket-all-access-policy-output`, {
+            exportName: `${id}-client-bucket-all-access-policy-arn`,
             value: policies.bucket.allAccess.managedPolicyArn,
         })
     }

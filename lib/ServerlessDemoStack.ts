@@ -1,29 +1,31 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import {ReactStaticClient} from "./ReactStaticClient";
-import {DispatchEmailLambda} from "./DispatchEmailLambda";
-import {Certificate} from "aws-cdk-lib/aws-certificatemanager/lib/certificate";
+import {ReactStaticClient} from './ReactStaticClient';
+import {DispatchEmailLambda} from './DispatchEmailLambda';
+import {TLSHostedZone} from './TLSHostedZone';
 
-type Env = "uat" | "staging" | "production"
+type Env = 'uat' | 'staging' | 'production'
 
 export class ServerlessDemoStack extends cdk.Stack {
   private staticSite: ReactStaticClient;
   private dispatchLambda: DispatchEmailLambda;
+  private TLSHostedZone: TLSHostedZone
 
   constructor(scope: Construct, id: string, env: Env, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const hostedZone = new cdk.aws_route53.HostedZone(this, 'Ross Feedback Hosted Zone', { zoneName: "ross-feedback-form.gg" });
-    const cert: Certificate = new cdk.aws_certificatemanager.Certificate(this, 'Certificate', {
-      domainName: '*.ross-feedback-form.gg',
-      validation: cdk.aws_certificatemanager.CertificateValidation.fromDns(hostedZone),
-    });
-
-    this.staticSite = new ReactStaticClient(this, 'react-static-client', {
+    this.TLSHostedZone = new TLSHostedZone(this, `ross-feedback-site-${env}`, 'ross-feedback-form.gg')
+    this.staticSite = new ReactStaticClient(this, `react-static-client-${env}`, {
       env: env,
-      hostedZone: hostedZone,
-      cert: cert,
+      hostedZone: this.TLSHostedZone.hostedZone,
+      cert: this.TLSHostedZone.cert,
     })
-    this.dispatchLambda = new DispatchEmailLambda(this, 'dispatch-feedback-email-lambda', env)
+    this.dispatchLambda = new DispatchEmailLambda(this, `dispatch-feedback-email-lambda-${env}`, {
+      path: 'src/lambda-functions',
+      handler: 'DispatchEmail.main',
+      restApiName: 'Dispatch Feedback Lambda',
+      description: 'This service sends emails for feedback.',
+      method: 'POST',
+    })
   }
 }

@@ -3,10 +3,10 @@ const SESClient = new AWS.SES();
 
 exports.main = async function (event, context) {
     try {
-        var method = event.httpMethod;
+        const method = event.httpMethod;
 
         if (method === "POST") {
-            if (event.path === "/feedback") {
+            if (event.path === "/") {
                 const {email, name, feedback} = event.input.body;
                 if (!validateString(email) || !validateString(name) || !validateString(feedback)) {
                     return {
@@ -24,7 +24,7 @@ exports.main = async function (event, context) {
                     };
                 }
 
-                const result = await sendEmail('feedback recieved', JSON.stringify({
+                const result = await sendEmail('feedback received', JSON.stringify({
                     email, name, feedback
                 }), 'ross.burchnall@and.digital')
 
@@ -51,7 +51,7 @@ exports.main = async function (event, context) {
         };
     } catch (error) {
         // TODO: Improve error handling with something like sentry
-        var body = error.stack || JSON.stringify(error, null, 2);
+        const body = error.stack || JSON.stringify(error, null, 2);
         return {
             statusCode: 400,
             headers: {},
