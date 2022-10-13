@@ -27,7 +27,7 @@ export class APIGatewayWithLambda extends Construct {
             handler: handler,
             environment: {
                 ...envVars
-            }
+            },
         });
 
         this.api = new apigateway.RestApi(this, `${id}-api`, {

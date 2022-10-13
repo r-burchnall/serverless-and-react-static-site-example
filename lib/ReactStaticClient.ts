@@ -1,7 +1,9 @@
 import { Construct } from "constructs";
 import {
-    AssetHashType, aws_certificatemanager,
-    aws_cloudfront, aws_cloudfront_origins, aws_iam,
+    AssetHashType,
+    aws_cloudfront,
+    aws_cloudfront_origins,
+    aws_iam,
     aws_route53,
     aws_s3,
     aws_s3_deployment,
@@ -18,8 +20,6 @@ type Env = "uat" | "staging" | "production"
 
 type Props = {
     env: Env,
-    hostedZone: HostedZone,
-    cert: Certificate
 }
 
 export class ReactStaticClient extends Construct {
@@ -27,7 +27,7 @@ export class ReactStaticClient extends Construct {
     public distribution: Distribution;
     public cname: CnameRecord;
 
-    constructor(scope: Construct, id: string, {env, hostedZone, cert}: Props) {
+    constructor(scope: Construct, id: string, {env}: Props) {
         super(scope, id);
 
         const policies = {
@@ -37,9 +37,9 @@ export class ReactStaticClient extends Construct {
         }
 
         const bucketNameMap: Record<Env, string> = {
-            uat: 'uat.' + hostedZone.zoneName,
-            staging: 'staging.' + hostedZone.zoneName,
-            production: 'www.' + hostedZone.zoneName,
+            uat: 'uat.rossfeedbackform.com',
+            staging: 'staging.rossfeedbackform.com',
+            production: 'production.rossfeedbackform.com',
         }
 
         this.hostingBucket = new aws_s3.Bucket(
@@ -69,6 +69,7 @@ export class ReactStaticClient extends Construct {
                 removalPolicy: RemovalPolicy.DESTROY,
             },
         )
+        this.hostingBucket.policy?.applyRemovalPolicy(RemovalPolicy.DESTROY)
 
         policies.bucket.allAccess = new aws_iam.ManagedPolicy(
             this,
@@ -105,6 +106,7 @@ export class ReactStaticClient extends Construct {
                 }),
             ],
             destinationBucket: this.hostingBucket,
+            retainOnDelete: false
         })
 
         const domainMap: Record<string, string> = {
@@ -113,36 +115,18 @@ export class ReactStaticClient extends Construct {
             production: 'www',
         }
 
-        // Create Distribution with cert, default object, custom error response
-        this.distribution = new aws_cloudfront.Distribution(
-            this,
-            `${id}-cf-distribution`,
-            {
-                defaultBehavior: {
-                    origin: new aws_cloudfront_origins.S3Origin(this.hostingBucket),
-                    cachePolicy: aws_cloudfront.CachePolicy.CACHING_DISABLED,
-                },
-                defaultRootObject: 'index.html',
-                domainNames: [bucketNameMap[env]],
-                certificate: cert,
-                errorResponses: [{ httpStatus: 404, responsePagePath: '/index.html' }],
-            },
-        )
-
         // Create CNAME
         console.log(
             `Attempting to use the domain name of ${domainMap[env]} as cname for client`,
         )
 
-        this.cname = new aws_route53.CnameRecord(this, `${id}-cname`, {
-            recordName: domainMap[env],
-            domainName: this.distribution.distributionDomainName,
-            zone: hostedZone,
-        })
-
         new CfnOutput(this, `${id}-client-bucket-all-access-policy-output`, {
             exportName: `${id}-client-bucket-all-access-policy-arn`,
             value: policies.bucket.allAccess.managedPolicyArn,
+        })
+        new CfnOutput(this, `${id}-url`, {
+            exportName: `${id}-hosted-site-url`,
+            value: this.hostingBucket.bucketWebsiteUrl,
         })
     }
 }
