@@ -17,22 +17,24 @@ class PythonStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        signing_profile = signer.SigningProfile(self, "SigningProfile",
-                                                platform=signer.Platform.AWS_LAMBDA_SHA384_ECDSA
-                                                )
+        layer = lambda_.LayerVersion(
+            self,
+            'feedback-deps-layer',
+            removal_policy=aws_cdk.RemovalPolicy.DESTROY,
+            code=lambda_.Code.from_asset(path=path.join(os.getcwd(), "build")),
+        )
 
-        code_signing_config = lambda_.CodeSigningConfig(self, "CodeSigningConfig",
-                                                        signing_profiles=[signing_profile]
-                                                        )
-
-        backend = lambda_.Function(self, "Function",
-                                   function_name='ross-serverless-feedback',
+        backend = lambda_.Function(self, "ross-python-feedback-function",
+                                   function_name='ross-serverless-feedback-handler',
                                    description='part of serverless training, expected to recieve a POST event from an API gateway',
-                                   code_signing_config=code_signing_config,
-                                   runtime=lambda_.Runtime.NODEJS_16_X,
+                                   runtime=lambda_.Runtime.PYTHON_3_9,
                                    handler="index.handler",
-                                   code=lambda_.Code.from_asset(path=path.join(os.getcwd(), "lambda_handler"))
+                                   code=lambda_.Code.from_asset(path=path.join(os.getcwd(), "lambda_handler")),
+                                   layers=[layer],
+                                   timeout=aws_cdk.Duration.seconds(30)
                                    )
+
+
 
         api = apigateway.LambdaRestApi(self, "myapi",
                                        handler=backend,
