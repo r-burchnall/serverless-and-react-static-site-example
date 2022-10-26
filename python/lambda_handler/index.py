@@ -1,10 +1,19 @@
+import json
+
 from aws_lambda_typing import events, context, responses
 
 
-def handler(event: events.api_gateway_proxy.APIGatewayProxyEventV1,
-            context: context.Context) -> responses.APIGatewayProxyResponseV1:
+def handler(
+        event: events.api_gateway_proxy.APIGatewayProxyEventV1,
+        context: context.Context
+) -> responses.APIGatewayProxyResponseV1:
     try:
         if event['path'] == '/' and event['httpMethod'] == 'POST':
+            body = json.loads(event['body'])
+
+            if body['email'] is not None or body['name'] is not None or body['feedback'] is not None:
+
+
             return _build_http_response(200, 'got request')
         else:
             return _build_http_response(
