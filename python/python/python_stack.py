@@ -7,7 +7,6 @@ from aws_cdk import (
     aws_s3,
     aws_apigateway as apigateway,
     aws_lambda as lambda_,
-    aws_signer as signer
 )
 from constructs import Construct
 
@@ -17,24 +16,14 @@ class PythonStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        layer = lambda_.LayerVersion(
-            self,
-            'feedback-deps-layer',
-            removal_policy=aws_cdk.RemovalPolicy.DESTROY,
-            code=lambda_.Code.from_asset(path=path.join(os.getcwd(), "build")),
-        )
-
         backend = lambda_.Function(self, "ross-python-feedback-function",
                                    function_name='ross-serverless-feedback-handler',
                                    description='part of serverless training, expected to recieve a POST event from an API gateway',
                                    runtime=lambda_.Runtime.PYTHON_3_9,
-                                   handler="index.handler",
-                                   code=lambda_.Code.from_asset(path=path.join(os.getcwd(), "lambda_handler")),
-                                   layers=[layer],
+                                   handler="lambda_handler/index.handler",
+                                   code=lambda_.Code.from_asset(path=path.join(os.getcwd(), "build.zip")),
                                    timeout=aws_cdk.Duration.seconds(30)
                                    )
-
-
 
         api = apigateway.LambdaRestApi(self, "myapi",
                                        handler=backend,

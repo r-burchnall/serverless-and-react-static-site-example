@@ -1,1 +1,0 @@
-aws_lambda_typing==2.16.1

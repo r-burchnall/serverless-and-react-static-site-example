@@ -1,19 +1,19 @@
 [tool.poetry]
-name = "ross-feedback-python"
+name = "lambda_handler"
 version = "0.1.0"
 description = "AWS CDK stack with static website and lambda handler. Using poetry to configure and bundle."
 authors = ["Ross Burchnall <ross.burchnall@and.digital>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "ross_feedback_python"}]
+#packages = [{include = "ross_feedback_python"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
 aws-lambda-typing = "^2.16.1"
-aws-cdk-lib = "^2.47.0"
-constructs = "^10.1.140"
 
 [tool.poetry.group.dev.dependencies]
+aws-cdk-lib = "^2.47.0"
+constructs = "^10.1.140"
 pytest = "^7.2.0"
 
 [build-system]

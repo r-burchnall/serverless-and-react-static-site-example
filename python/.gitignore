@@ -11,3 +11,5 @@ cdk.out
 
 build
 build.zip
+dist
+bundle

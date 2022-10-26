@@ -12,7 +12,7 @@ def handler(
             body = json.loads(event['body'])
 
             if body['email'] is not None or body['name'] is not None or body['feedback'] is not None:
-
+                return _build_http_response(400, 'Json payload requires a field for email, feedback and name')
 
             return _build_http_response(200, 'got request')
         else:
